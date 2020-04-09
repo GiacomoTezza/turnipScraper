@@ -1,6 +1,9 @@
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from time import sleep
+from sys import argv, exit
+import getopt
+from spinner import Spinner
 
 
 class Island:
@@ -33,6 +36,7 @@ def connect(driverPath, site='https://turnip.exchange/islands'):
     """
     options = webdriver.ChromeOptions()
     options.headless = True
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])
     driver = webdriver.Chrome(
         executable_path=driverPath, options=options)
     driver.get(site)
@@ -44,7 +48,7 @@ def getIslands(driver):
     """
     Returns the list of all the islands
 
-    Function that creates an Island object scraping bells 
+    Function that creates an Island object scraping bells
     and queue informations and that appends it in a list
 
     Parameters
@@ -84,7 +88,7 @@ def startQueue(driver, island, name):
     """
     Joins the queue of a given island
 
-    Function that joins the queue and 
+    Function that joins the queue and
     registers the user nickname
 
     Parameters
@@ -102,6 +106,9 @@ def startQueue(driver, island, name):
         false if something is gone wrong keks
 
     """
+    print("Island selected:")
+    print("- Turnip price: " + str(island.bells))
+    print("- Peoples in queue: " + str(island.queue))
     island = island.card
     island.click()
     sleep(5)
@@ -149,19 +156,38 @@ def getCode(driver):
     try:
         banner = driver.find_element_by_xpath(
             '//*[@id="app"]/div[2]/div[3]/div[2]/div[2]')
-        print("Still in queue")
         return getCode(driver)
     except:
+        sleep(5)
         banner = driver.find_element_by_xpath(
             '//*[@id="app"]/div[2]/div[3]/div[2]')
         banner.find_element_by_class_name('uppercase').click()
         sleep(5)
-        print("Getting island's code")
         return driver.find_element_by_xpath('//*[@id="app"]/div[2]/div[3]/div[2]/p[2]').text
 
 
 if __name__ == '__main__':
-    driver = connect('lib/chromedriver.exe')
-    if (startQueue(driver, getBestPrice(getBestN(getIslands(driver), 5)), "Eneaaa")):
-        print("The island code is: " + getCode(driver))
+    driverPath, name = '', ''
+
+    try:
+        opts, args = getopt.getopt(argv[1:], "hd:n:", ["driverPath=", "name="])
+    except getopt.GetoptError:
+        print('main.py -d <driverPath> -n <name>')
+        exit(2)
+
+    for opt, arg in opts:
+        if opt == '-h':
+            print('test.py -i <inputfile> -o <outputfile>')
+            exit()
+        elif opt in ("-d", "--driverPath"):
+            driverPath = arg
+        elif opt in ("-n", "--name"):
+            name = arg
+
+    print("Driver path selected: " + driverPath)
+    print("Name selected: " + name)
+    driver = connect(driverPath)
+    if (startQueue(driver, getBestPrice(getBestN(getIslands(driver), 5)), name)):
+        with Spinner():
+            print("\n\nThe island code is: " + getCode(driver))
     driver.quit()
