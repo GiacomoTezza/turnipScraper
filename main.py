@@ -177,7 +177,7 @@ if __name__ == '__main__':
 
     for opt, arg in opts:
         if opt == '-h':
-            print('test.py -i <inputfile> -o <outputfile>')
+            print('main.py -d <driverPath> -n <name>')
             exit()
         elif opt in ("-d", "--driverPath"):
             driverPath = arg
