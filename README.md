@@ -23,3 +23,4 @@ pip install -U selenium
 ```bash
 main.py -d <driverPath> -n <name>
 ```
+- Have fun and sell them all!
