@@ -35,7 +35,7 @@ def connect(driverPath, site='https://turnip.exchange/islands'):
 
     """
     options = webdriver.ChromeOptions()
-    options.headless = True
+    options.headless = False
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     driver = webdriver.Chrome(
         executable_path=driverPath, options=options)
@@ -76,12 +76,20 @@ def getIslands(driver):
     return islands
 
 
-def getBestN(islands, n):
+def getBestNSell(islands, n):
     return sorted(islands, key=lambda island: island.rating)[-n:]
 
 
-def getBestPrice(islands):
+def getBestPriceSell(islands):
     return sorted(islands, key=lambda island: island.bells)[-1]
+
+
+def getBestNBuy(islands, n):
+    return sorted(islands, key=lambda island: island.rating)[:n]
+
+
+def getBestPriceBuy(islands):
+    return sorted(islands, key=lambda island: island.bells)[0]
 
 
 def startQueue(driver, island, name):
@@ -167,27 +175,53 @@ def getCode(driver):
 
 
 if __name__ == '__main__':
-    driverPath, name = '', ''
+    driverPath, name, mode = '', '', ''
 
     try:
-        opts, args = getopt.getopt(argv[1:], "hd:n:", ["driverPath=", "name="])
+        opts, args = getopt.getopt(argv[1:], "hbsd:n:", [
+                                   "driverPath=", "name="])
     except getopt.GetoptError:
-        print('main.py -d <driverPath> -n <name>')
+        print('If you want to find an island where sell turnips:')
+        print('main.py -s -d <driverPath> -n <name>')
+        print('If you want to find an island where buy turnips:')
+        print('main.py -b -d <driverPath> -n <name>')
         exit(2)
 
     for opt, arg in opts:
         if opt == '-h':
-            print('main.py -d <driverPath> -n <name>')
+            print('If you want to find an island where sell turnips:')
+            print('main.py -s -d <driverPath> -n <name>')
+            print('If you want to find an island where buy turnips:')
+            print('main.py -b -d <driverPath> -n <name>')
             exit()
+        elif opt == '-b':
+            mode = 'buy'
+        elif opt == '-s':
+            mode = 'sell'
         elif opt in ("-d", "--driverPath"):
             driverPath = arg
         elif opt in ("-n", "--name"):
             name = arg
 
+    if mode == '':
+        print('If you want to find an island where sell turnips:')
+        print('main.py -s -d <driverPath> -n <name>')
+        print('If you want to find an island where buy turnips:')
+        print('main.py -b -d <driverPath> -n <name>')
+        exit(2)
+
     print("Driver path selected: " + driverPath)
     print("Name selected: " + name)
+    print("Mode selected: " + mode)
     driver = connect(driverPath)
-    if (startQueue(driver, getBestPrice(getBestN(getIslands(driver), 5)), name)):
-        with Spinner():
-            print("\n\nThe island code is: " + getCode(driver))
+
+    if mode == 'sell':
+        if (startQueue(driver, getBestPriceSell(getBestNSell(getIslands(driver), 5)), name)):
+            with Spinner():
+                print("\n\nThe island code is: " + getCode(driver))
+    elif mode == 'buy':
+        if (startQueue(driver, getBestPriceBuy(getBestNBuy(getIslands(driver), 5)), name)):
+            with Spinner():
+                print("\n\nThe island code is: " + getCode(driver))
+
     driver.quit()
