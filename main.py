@@ -4,6 +4,7 @@ from time import sleep
 from sys import argv, exit
 import getopt
 from spinner import Spinner
+from random import randint as detectThisAssHole, random
 
 
 class Island:
@@ -36,6 +37,7 @@ def connect(driverPath, site='https://turnip.exchange/islands'):
     """
     options = webdriver.ChromeOptions()
     options.headless = False
+    options.add_argument("--incognito")
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     driver = webdriver.Chrome(
         executable_path=driverPath, options=options)
@@ -62,7 +64,7 @@ def getIslands(driver):
         list of Island objects
 
     """
-    sleep(5)
+    sleep(detectThisAssHole(5, 10))
     cards = driver.find_elements_by_class_name('note')
     islands = []
     for card in cards:
@@ -119,12 +121,12 @@ def startQueue(driver, island, name):
     print("- Peoples in queue: " + str(island.queue))
     island = island.card
     island.click()
-    sleep(5)
+    sleep(detectThisAssHole(5, 10))
     try:
         driver.find_element_by_class_name('bg-info').click()
     except:
         pass
-    sleep(5)
+    sleep(detectThisAssHole(5, 10))
     button = driver.find_element_by_xpath(
         '//*[@id="app"]/div[2]/div[3]/div/button')
 
@@ -160,18 +162,38 @@ def getCode(driver):
         island's code
 
     """
-    sleep(10)
+    sleep(detectThisAssHole(10, 15))
     try:
         banner = driver.find_element_by_xpath(
             '//*[@id="app"]/div[2]/div[3]/div[2]/div[2]')
         return getCode(driver)
     except:
-        sleep(5)
+        sleep(detectThisAssHole(5, 10))
         banner = driver.find_element_by_xpath(
             '//*[@id="app"]/div[2]/div[3]/div[2]')
         banner.find_element_by_class_name('uppercase').click()
-        sleep(5)
+        sleep(detectThisAssHole(5, 10))
         return driver.find_element_by_xpath('//*[@id="app"]/div[2]/div[3]/div[2]/p[2]').text
+
+
+def sellProcedure(driver, name):
+    if (startQueue(driver, getBestPriceSell(getBestNSell(getIslands(driver), 5)), name)):
+        with Spinner():
+            return getCode(driver)
+
+
+def buyProcedure(driver, name):
+    if (startQueue(driver, getBestPriceBuy(getBestNBuy(getIslands(driver), 5)), name)):
+        with Spinner():
+            return getCode(driver)
+
+
+def falsePositive(driver, name, site='https://turnip.exchange/islands'):
+    islands = getIslands(driver)
+    startQueue(driver, islands[detectThisAssHole(0, len(islands) - 1)], name)
+    sleep(detectThisAssHole(10, 15))
+    driver.get(site)
+    sleep(detectThisAssHole(2, 5))
 
 
 if __name__ == '__main__':
@@ -179,7 +201,7 @@ if __name__ == '__main__':
 
     try:
         opts, args = getopt.getopt(argv[1:], "hbsd:n:", [
-                                   "driverPath=", "name="])
+            "driverPath=", "name="])
     except getopt.GetoptError:
         print('If you want to find an island where sell turnips:')
         print('main.py -s -d <driverPath> -n <name>')
@@ -214,14 +236,11 @@ if __name__ == '__main__':
     print("Name selected: " + name)
     print("Mode selected: " + mode)
     driver = connect(driverPath)
-
+    if random() < 0.2:
+        print('Please wait some seconds..')
+        falsePositive(driver, name)
     if mode == 'sell':
-        if (startQueue(driver, getBestPriceSell(getBestNSell(getIslands(driver), 5)), name)):
-            with Spinner():
-                print("\n\nThe island code is: " + getCode(driver))
+        print("\n\nThe island code is: " + sellProcedure(driver, name))
     elif mode == 'buy':
-        if (startQueue(driver, getBestPriceBuy(getBestNBuy(getIslands(driver), 5)), name)):
-            with Spinner():
-                print("\n\nThe island code is: " + getCode(driver))
-
+        print("\n\nThe island code is: " + buyProcedure(driver, name))
     driver.quit()
